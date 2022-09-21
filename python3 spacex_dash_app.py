@@ -64,18 +64,19 @@ app.layout = html.Div(children=[html.H1('SpaceX Launch Records Dashboard',
 Output(component_id='success-pie-chart', component_property='figure'),
 Input(component_id='site-dropdown', component_property='value')
 )
-def get_pie(value):
-    filtered_df = spacex_df
-    if value == 'All Sites':
-        fig = px.pie(filtered_df, values='class', names='Launch Site', title='Total Success Launches By Site')
-        return fig
-
-    else:
-        filtered_df = spacex_df[spacex_df['Launch Site'] == value].groupby(['Launch Site', 'class']). \
-        size().reset_index(name='class count')
-        title = f"Total Success Launches for site {value}"
-        fig = px.pie(filtered_df,values='class count', names='class', title=title)
-        return fig
+def get_pie_chart(entered_site):	
+    filtered_df = spacex_df	
+    if entered_site == 'ALL':	
+        fig = px.pie(filtered_df, values='class',	
+        labels= {'class':'Total'},	
+        names='Launch Site', 	
+        title='Total Successes for All Launch Sites')	
+       	
+    else:	
+        filtered_df = spacex_df[spacex_df["Launch Site"] == entered_site]["class"].value_counts().to_frame()	
+        filtered_df["name"] = ["Failure", "Success"]	
+        fig = px.pie(filtered_df, values='class', names='name', title='Total Success Launches for ' + entered_site)	
+    return fig	
 
 # Add a callback function for `site-dropdown` and `payload-slider` as inputs, `success-payload-scatter-chart` as output
 @app.callback(
@@ -84,18 +85,24 @@ Output(component_id='success-payload-scatter-chart', component_property='figure'
 Input(component_id='payload-slider', component_property='value')]
 )
 
-def get_scatter(value1,value2):
-    filtered_df2_1=spacex_df[(spacex_df['Payload Mass (kg)'] > value2[0]) & (spacex_df['Payload Mass (kg)'] < value2[1])]
-
-    if value1=='All Sites':
-        fig= px.scatter(filtered_df2_1,x="Payload Mass (kg)",y="class",color="Booster Version Category",\
-        title="Correlation between Payload and Success for All sites")
-        return fig
-    else :
-        filtered_df2_2=filtered_df2_1[filtered_df2_1['Launch Site']==value1]
-        fig= px.scatter(filtered_df2_2,x="Payload Mass (kg)",y="class",color="Booster Version Category",\
-        title=f"Correlation between Payload and Success for site {value1}")
-        return fig
+def get_scatter_chart(entered_site, payload):
+    print(entered_site)
+    print(payload)
+    if entered_site == 'ALL':
+        new_df = spacex_df
+        new_df2 = new_df[new_df["Payload Mass (kg)"]>=payload[0]]
+        new_df3 = new_df2[new_df["Payload Mass (kg)"]<=payload[1]]
+        fig2 = px.scatter(new_df3, y="class", x="Payload Mass (kg)", 
+        color= "Booster Version Category", 
+        title="Correlation between Payload Mass (Kg) and Launch Outcome")
+    else:
+        new_df = spacex_df[spacex_df["Launch Site"]==entered_site]
+        new_df2 = new_df[new_df["Payload Mass (kg)"]>=payload[0]]
+        new_df3 = new_df2[new_df["Payload Mass (kg)"]<=payload[1]]
+        fig2 = px.scatter(new_df3, y="class", x="Payload Mass (kg)", 
+        color="Booster Version Category", 
+        title="Correlation between Payload Mass (Kg) and Launch Outcome")
+    return fig2   
 # Run the app
 if __name__ == '__main__':
     app.run_server()  
